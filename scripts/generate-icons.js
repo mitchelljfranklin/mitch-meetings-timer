@@ -6,7 +6,7 @@ import { deflateSync } from "zlib";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const manifestDir = join(__dirname, "..", "manifest");
 
-function crc32(data: Buffer): number {
+function crc32(data) {
   let crc = 0xffffffff;
   const table = new Int32Array(256);
   for (let i = 0; i < 256; i++) {
@@ -20,7 +20,7 @@ function crc32(data: Buffer): number {
   return (crc ^ 0xffffffff) >>> 0;
 }
 
-function pngChunk(type: string, data: Buffer): Buffer {
+function pngChunk(type, data) {
   const typeAndData = Buffer.concat([Buffer.from(type, "ascii"), data]);
   const crc = crc32(typeAndData);
   const len = Buffer.alloc(4);
@@ -30,7 +30,7 @@ function pngChunk(type: string, data: Buffer): Buffer {
   return Buffer.concat([len, typeAndData, crcBuf]);
 }
 
-function generateSolidPng(size: number, filePath: string, r: number, g: number, b: number, a: number) {
+function generateSolidPng(size, filePath, r, g, b, a) {
   const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
   const ihdrData = Buffer.alloc(13);
@@ -42,7 +42,7 @@ function generateSolidPng(size: number, filePath: string, r: number, g: number, 
   ihdrData[11] = 0;
   ihdrData[12] = 0;
 
-  const rawRows: Buffer[] = [];
+  const rawRows = [];
   for (let y = 0; y < size; y++) {
     rawRows.push(Buffer.from([0]));
     const pixel = Buffer.from([r, g, b, a]);

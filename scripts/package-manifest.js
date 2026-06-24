@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, readdirSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, readdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { execSync } from "child_process";
@@ -32,7 +32,7 @@ for (const file of readdirSync(manifestDir)) {
 
 const zipFile = join(root, "meetings-timer.zip");
 execSync(`rm -f "${zipFile}"`);
-execSync(`cd "${tempDir}" && zip -r "${zipFile}" .`, { cwd: tempDir });
+execSync(`cd "${tempDir}" && zip -r "${zipFile}" .`);
 execSync(`rm -rf "${tempDir}"`);
 
 console.log(`Package created: ${zipFile}`);
