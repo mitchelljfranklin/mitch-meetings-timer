@@ -4,3 +4,4 @@ dist
 *.local
 meetings-timer.zip
 .package
+tsconfig.tsbuildinfo
