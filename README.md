@@ -1,4 +1,4 @@
-# Meeting Timer — Microsoft Teams App
+# MitchMeeting Timer — Microsoft Teams App
 
 A multi-mode timer app for Microsoft Teams meetings. Runs in the **meeting side panel**
 so every participant can see the active timer during a call or meeting.
