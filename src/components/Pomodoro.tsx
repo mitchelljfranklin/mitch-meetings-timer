@@ -1,87 +1,210 @@
-import { JSX } from "react";
+import { JSX, useEffect, useRef } from "react";
+import {
+  makeStyles,
+  tokens,
+  Button,
+  SpinButton,
+  Field,
+  Switch,
+  Text,
+} from "@fluentui/react-components";
 import { usePomodoro } from "../hooks/usePomodoro";
+import { useAnnouncer } from "../hooks/useAnnouncer";
+import { usePreferences } from "../hooks/usePreferences";
 import { TimerDisplay } from "./TimerDisplay";
+import { formatMinutes } from "../utils/format";
+import { primeAudio, playChime } from "../utils/sound";
 
-function formatDisplay(ms: number): string {
-  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(m)}:${pad(s)}`;
+const useStyles = makeStyles({
+  mode: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: tokens.spacingVerticalL,
+    width: "100%",
+  },
+  info: {
+    color: tokens.colorNeutralForeground3,
+  },
+  settings: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: tokens.spacingHorizontalM,
+    justifyContent: "center",
+  },
+  spin: {
+    width: "96px",
+  },
+  controls: {
+    display: "flex",
+    gap: tokens.spacingHorizontalM,
+    flexWrap: "wrap",
+    justifyContent: "center",
+  },
+  toggles: {
+    display: "flex",
+    justifyContent: "center",
+  },
+});
+
+function phaseLabel(phase: string): string {
+  if (phase === "work") return "Focus";
+  if (phase === "longBreak") return "Long Break";
+  return "Break";
+}
+
+function phaseStartedMessage(phase: string): string {
+  if (phase === "work") return "Focus time started.";
+  if (phase === "longBreak") return "Long break started.";
+  return "Break time started.";
+}
+
+function phaseColor(phase: string): string {
+  if (phase === "work") return tokens.colorBrandBackground;
+  if (phase === "longBreak") return tokens.colorPaletteBlueForeground2;
+  return tokens.colorPaletteGreenForeground1;
 }
 
 export function Pomodoro(): JSX.Element {
+  const styles = useStyles();
   const timer = usePomodoro();
-  const progress = timer.remainingMs / timer.phaseTotalMs;
-  const isWork = timer.currentPhase === "work";
+  const { announce, Announcer } = useAnnouncer();
+  const { soundEnabled, setSoundEnabled } = usePreferences();
+  const progress =
+    timer.phaseTotalMs > 0 ? timer.remainingMs / timer.phaseTotalMs : 0;
+
+  const soundEnabledRef = useRef(soundEnabled);
+  soundEnabledRef.current = soundEnabled;
+
+  const prevPhase = useRef(timer.currentPhase);
+  useEffect(() => {
+    if (timer.currentPhase !== prevPhase.current) {
+      prevPhase.current = timer.currentPhase;
+      announce(phaseStartedMessage(timer.currentPhase));
+      if (soundEnabledRef.current) {
+        playChime(1);
+      }
+    }
+  }, [timer.currentPhase, announce]);
+
+  const handleStart = () => {
+    primeAudio();
+    timer.start();
+    announce(phaseStartedMessage(timer.currentPhase));
+  };
+  const handlePause = () => {
+    timer.pause();
+    announce("Pomodoro paused.");
+  };
+  const handleResume = () => {
+    primeAudio();
+    timer.resume();
+    announce("Pomodoro resumed.");
+  };
+  const handleReset = () => {
+    timer.reset();
+    announce("Pomodoro reset.");
+  };
 
   return (
-    <div className="timer-mode">
+    <div className={styles.mode}>
       <TimerDisplay
         progress={progress}
-        time={formatDisplay(timer.remainingMs)}
-        label={isWork ? "Focus" : "Break"}
-        color={isWork ? "var(--accent-color)" : "var(--break-color)"}
+        time={formatMinutes(timer.remainingMs)}
+        label={phaseLabel(timer.currentPhase)}
+        color={phaseColor(timer.currentPhase)}
       />
 
-      <div className="pomodoro-info">
-        <span>Sessions: {timer.sessions}</span>
-      </div>
+      <Text className={styles.info} weight="semibold">
+        Sessions: {timer.sessions}
+      </Text>
 
-      {!timer.isRunning ? (
-        <div className="pomodoro-settings">
-          <div className="time-input-group">
-            <input
-              type="number"
-              min={1}
-              max={99}
+      {!timer.isRunning && (
+        <div className={styles.settings}>
+          <Field label="work min">
+            <SpinButton
+              className={styles.spin}
               value={timer.workDuration}
-              onChange={(e) => timer.setWorkDuration(Number(e.target.value))}
-              disabled={timer.isRunning}
-            />
-            <label>work min</label>
-          </div>
-          <div className="time-input-group">
-            <input
-              type="number"
               min={1}
               max={99}
-              value={timer.breakDuration}
-              onChange={(e) => timer.setBreakDuration(Number(e.target.value))}
-              disabled={timer.isRunning}
+              onChange={(_e, data) => {
+                const next = data.value ?? Number(data.displayValue);
+                if (!Number.isNaN(next)) timer.setWorkDuration(next);
+              }}
             />
-            <label>break min</label>
-          </div>
+          </Field>
+          <Field label="break min">
+            <SpinButton
+              className={styles.spin}
+              value={timer.breakDuration}
+              min={1}
+              max={99}
+              onChange={(_e, data) => {
+                const next = data.value ?? Number(data.displayValue);
+                if (!Number.isNaN(next)) timer.setBreakDuration(next);
+              }}
+            />
+          </Field>
+          <Field label="long min">
+            <SpinButton
+              className={styles.spin}
+              value={timer.longBreakDuration}
+              min={1}
+              max={99}
+              onChange={(_e, data) => {
+                const next = data.value ?? Number(data.displayValue);
+                if (!Number.isNaN(next)) timer.setLongBreakDuration(next);
+              }}
+            />
+          </Field>
+          <Field label="long every">
+            <SpinButton
+              className={styles.spin}
+              value={timer.sessionsBeforeLongBreak}
+              min={1}
+              max={12}
+              onChange={(_e, data) => {
+                const next = data.value ?? Number(data.displayValue);
+                if (!Number.isNaN(next)) timer.setSessionsBeforeLongBreak(next);
+              }}
+            />
+          </Field>
         </div>
-      ) : null}
+      )}
 
-      <div className="timer-controls">
+      <div className={styles.controls}>
         {!timer.isRunning && !timer.isPaused && (
-          <button className="btn btn-primary" onClick={timer.start}>
+          <Button appearance="primary" onClick={handleStart}>
             Start
-          </button>
+          </Button>
         )}
         {timer.isRunning && (
           <>
-            <button className="btn btn-secondary" onClick={timer.pause}>
-              Pause
-            </button>
-            <button className="btn btn-accent" onClick={timer.skip}>
+            <Button onClick={handlePause}>Pause</Button>
+            <Button appearance="outline" onClick={timer.skip}>
               Skip
-            </button>
+            </Button>
           </>
         )}
         {timer.isPaused && (
           <>
-            <button className="btn btn-primary" onClick={timer.resume}>
+            <Button appearance="primary" onClick={handleResume}>
               Resume
-            </button>
-            <button className="btn btn-secondary" onClick={timer.reset}>
-              Reset
-            </button>
+            </Button>
+            <Button onClick={handleReset}>Reset</Button>
           </>
         )}
       </div>
+
+      <div className={styles.toggles}>
+        <Switch
+          checked={soundEnabled}
+          onChange={(_e, data) => setSoundEnabled(data.checked)}
+          label="Alert sound"
+        />
+      </div>
+
+      <Announcer />
     </div>
   );
 }

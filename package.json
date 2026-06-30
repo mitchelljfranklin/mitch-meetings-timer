@@ -10,21 +10,49 @@
     "preview": "vite preview",
     "serve": "tsx server.ts",
     "start": "npm run build && npm run serve",
+    "typecheck": "tsc -b --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
     "generate-icons": "node scripts/generate-icons.js",
     "package": "npm run generate-icons && npm run build && node scripts/package-manifest.js"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
+    "@fluentui/react-components": "^9.74.3",
+    "@fluentui/react-icons": "^2.0.331",
     "@microsoft/teams-js": "^2.31.0",
     "express": "^5.1.0",
+    "helmet": "^8.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "^4.1.9",
+    "eslint": "^10.6.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "globals": "^17.7.0",
+    "jsdom": "^29.1.1",
+    "prettier": "^3.9.4",
     "tsx": "^4.19.3",
     "typescript": "~5.7.2",
-    "vite": "^6.0.7"
+    "typescript-eslint": "^8.62.1",
+    "vite": "^6.0.7",
+    "vitest": "^4.1.9"
   }
 }

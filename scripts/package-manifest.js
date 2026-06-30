@@ -100,7 +100,9 @@ function buildZip(entries) {
   return Buffer.concat([...localParts, centralDir, end]);
 }
 
-const entries = [{ name: "manifest.json", data: Buffer.from(manifest, "utf-8") }];
+const entries = [
+  { name: "manifest.json", data: Buffer.from(manifest, "utf-8") },
+];
 for (const file of readdirSync(manifestDir)) {
   if (file.endsWith(".png")) {
     entries.push({ name: file, data: readFileSync(join(manifestDir, file)) });

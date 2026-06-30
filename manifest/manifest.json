@@ -11,12 +11,12 @@
     "termsOfUseUrl": "https://www.example.com/terms"
   },
   "name": {
-    "short": "Meeting Timer",
-    "full": "Meeting Timer"
+    "short": "Mitch Meeting-Timer",
+    "full": "Mitch Meeting-Timer"
   },
   "description": {
     "short": "Multi-mode meeting timer (countdown, stopwatch, pomodoro)",
-    "full": "A multi-timer app for Microsoft Teams meetings. Includes countdown timer with alert, stopwatch with lap tracking, and pomodoro timer with configurable work/break intervals. Runs in the meeting side panel so every participant can see the timer."
+    "full": "A multi-timer app for Microsoft Teams meetings: a countdown timer with an alert, a stopwatch with lap tracking, and a pomodoro timer with configurable work, break, and long-break intervals. Opens in the meeting side panel and the meeting chat and details tabs."
   },
   "icons": {
     "color": "color.png",
@@ -28,11 +28,7 @@
       "configurationUrl": "{{BASE_URL}}/index.html",
       "canUpdateConfiguration": true,
       "scopes": ["groupchat"],
-      "context": [
-        "meetingSidePanel",
-        "meetingChatTab",
-        "meetingDetailsTab"
-      ]
+      "context": ["meetingSidePanel", "meetingChatTab", "meetingDetailsTab"]
     }
   ],
   "staticTabs": [],

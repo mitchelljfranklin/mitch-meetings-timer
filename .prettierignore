@@ -1,0 +1,7 @@
+dist
+node_modules
+coverage
+.package
+package-lock.json
+meetings-timer.zip
+manifest/*.png

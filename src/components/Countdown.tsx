@@ -1,94 +1,188 @@
-import { JSX } from "react";
+import { JSX, useEffect, useRef } from "react";
+import {
+  makeStyles,
+  tokens,
+  Button,
+  SpinButton,
+  Field,
+  Switch,
+  Text,
+} from "@fluentui/react-components";
 import { useCountdown } from "../hooks/useCountdown";
+import { useAnnouncer } from "../hooks/useAnnouncer";
+import { usePreferences } from "../hooks/usePreferences";
 import { TimerDisplay } from "./TimerDisplay";
+import { Celebration } from "./Celebration";
+import { formatCountdown } from "../utils/format";
+import { primeAudio, playChime } from "../utils/sound";
 
-function formatDisplay(ms: number): string {
-  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(h)}:${pad(m)}:${pad(s)}`;
-}
+const useStyles = makeStyles({
+  mode: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: tokens.spacingVerticalL,
+    width: "100%",
+  },
+  inputs: {
+    display: "flex",
+    gap: tokens.spacingHorizontalM,
+    justifyContent: "center",
+  },
+  spin: {
+    width: "76px",
+  },
+  controls: {
+    display: "flex",
+    gap: tokens.spacingHorizontalM,
+    flexWrap: "wrap",
+    justifyContent: "center",
+  },
+  timesUp: {
+    display: "flex",
+    alignItems: "center",
+    gap: tokens.spacingHorizontalXS,
+    color: tokens.colorStatusDangerForeground1,
+  },
+  toggles: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: tokens.spacingHorizontalL,
+    justifyContent: "center",
+  },
+});
 
 export function Countdown(): JSX.Element {
+  const styles = useStyles();
   const timer = useCountdown();
+  const { announce, Announcer } = useAnnouncer();
+  const { soundEnabled, setSoundEnabled, confettiEnabled, setConfettiEnabled } =
+    usePreferences();
   const progress = timer.totalMs > 0 ? timer.remainingMs / timer.totalMs : 0;
 
+  const soundEnabledRef = useRef(soundEnabled);
+  soundEnabledRef.current = soundEnabled;
+
+  useEffect(() => {
+    if (timer.isFinished) {
+      announce("Countdown finished. Time is up.");
+      if (soundEnabledRef.current) {
+        playChime();
+      }
+    }
+  }, [timer.isFinished, announce]);
+
+  const handleStart = () => {
+    primeAudio();
+    timer.start();
+    announce("Countdown started.");
+  };
+  const handlePause = () => {
+    timer.pause();
+    announce("Countdown paused.");
+  };
+  const handleResume = () => {
+    primeAudio();
+    timer.resume();
+    announce("Countdown resumed.");
+  };
+  const handleReset = () => {
+    timer.reset();
+    announce("Countdown reset.");
+  };
+
   return (
-    <div className="timer-mode">
+    <div className={styles.mode}>
       <TimerDisplay
         progress={timer.isFinished ? 0 : progress}
-        time={formatDisplay(timer.remainingMs)}
-        color="var(--accent-color)"
+        time={formatCountdown(timer.remainingMs)}
         flashing={timer.isFinished}
       />
 
-      {!timer.isRunning ? (
-        <div className="time-inputs">
-          <div className="time-input-group">
-            <input
-              type="number"
+      {timer.isFinished && (
+        <Text className={styles.timesUp} size={600} weight="bold">
+          🎉 Time&apos;s up!
+        </Text>
+      )}
+
+      {!timer.isRunning && (
+        <div className={styles.inputs}>
+          <Field label="hr">
+            <SpinButton
+              className={styles.spin}
+              value={timer.hours}
               min={0}
               max={99}
-              value={timer.hours}
-              onChange={(e) => timer.setHours(Number(e.target.value))}
-              disabled={timer.isRunning}
+              onChange={(_e, data) => {
+                const next = data.value ?? Number(data.displayValue);
+                if (!Number.isNaN(next)) timer.setHours(next);
+              }}
             />
-            <label>hr</label>
-          </div>
-          <div className="time-input-group">
-            <input
-              type="number"
-              min={0}
-              max={59}
+          </Field>
+          <Field label="min">
+            <SpinButton
+              className={styles.spin}
               value={timer.minutes}
-              onChange={(e) => timer.setMinutes(Number(e.target.value))}
-              disabled={timer.isRunning}
-            />
-            <label>min</label>
-          </div>
-          <div className="time-input-group">
-            <input
-              type="number"
               min={0}
               max={59}
-              value={timer.seconds}
-              onChange={(e) => timer.setSeconds(Number(e.target.value))}
-              disabled={timer.isRunning}
+              onChange={(_e, data) => {
+                const next = data.value ?? Number(data.displayValue);
+                if (!Number.isNaN(next)) timer.setMinutes(next);
+              }}
             />
-            <label>sec</label>
-          </div>
+          </Field>
+          <Field label="sec">
+            <SpinButton
+              className={styles.spin}
+              value={timer.seconds}
+              min={0}
+              max={59}
+              onChange={(_e, data) => {
+                const next = data.value ?? Number(data.displayValue);
+                if (!Number.isNaN(next)) timer.setSeconds(next);
+              }}
+            />
+          </Field>
         </div>
-      ) : null}
+      )}
 
-      <div className="timer-controls">
+      <div className={styles.controls}>
         {!timer.isRunning && !timer.isPaused && (
-          <button className="btn btn-primary" onClick={timer.start}>
+          <Button appearance="primary" onClick={handleStart}>
             Start
-          </button>
+          </Button>
         )}
-        {timer.isRunning && (
-          <button className="btn btn-secondary" onClick={timer.pause}>
-            Pause
-          </button>
-        )}
+        {timer.isRunning && <Button onClick={handlePause}>Pause</Button>}
         {timer.isPaused && (
           <>
-            <button className="btn btn-primary" onClick={timer.resume}>
+            <Button appearance="primary" onClick={handleResume}>
               Resume
-            </button>
-            <button className="btn btn-secondary" onClick={timer.reset}>
-              Reset
-            </button>
+            </Button>
+            <Button onClick={handleReset}>Reset</Button>
           </>
         )}
         {timer.isFinished && (
-          <button className="btn btn-primary" onClick={timer.reset}>
+          <Button appearance="primary" onClick={handleReset}>
             Reset
-          </button>
+          </Button>
         )}
       </div>
+
+      <div className={styles.toggles}>
+        <Switch
+          checked={soundEnabled}
+          onChange={(_e, data) => setSoundEnabled(data.checked)}
+          label="Alert sound"
+        />
+        <Switch
+          checked={confettiEnabled}
+          onChange={(_e, data) => setConfettiEnabled(data.checked)}
+          label="Confetti"
+        />
+      </div>
+
+      <Announcer />
+      <Celebration active={timer.isFinished && confettiEnabled} />
     </div>
   );
 }
