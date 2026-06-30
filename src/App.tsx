@@ -26,9 +26,11 @@ function applyTheme(theme: string | undefined) {
   }
 }
 
-async function initTeams(): Promise<void> {
+type InitResult = { frameContext?: string };
+
+async function initTeams(): Promise<InitResult> {
   try {
-    const { app } = await import("@microsoft/teams-js");
+    const { app, pages } = await import("@microsoft/teams-js");
     await app.initialize();
 
     const context = await app.getContext();
@@ -43,25 +45,68 @@ async function initTeams(): Promise<void> {
       applyTheme(newTheme);
     });
 
+    const frameContext = context.page?.frameContext as string | undefined;
+
+    if (frameContext === "settings") {
+      try {
+        const contentUrl = `${window.location.origin}/index.html`;
+        pages.config.registerOnSaveHandler((saveEvent) => {
+          pages.config
+            .setConfig({
+              suggestedDisplayName: "Meeting Timer",
+              entityId: "meeting-timer",
+              contentUrl,
+              websiteUrl: contentUrl,
+            })
+            .then(() => saveEvent.notifySuccess())
+            .catch(() => saveEvent.notifyFailure("Failed to save configuration"));
+        });
+        pages.config.setValidityState(true);
+      } catch {
+        applyTheme("default");
+      }
+    }
+
     app.notifyAppLoaded();
     app.notifySuccess();
+
+    return { frameContext };
   } catch {
     applyTheme("default");
+    return {};
   }
 }
 
 export function App(): JSX.Element {
   const [mode, setMode] = useState<TimerMode>("countdown");
   const [ready, setReady] = useState(false);
+  const [frameContext, setFrameContext] = useState<string | undefined>();
 
   useEffect(() => {
-    initTeams().finally(() => setReady(true));
+    initTeams()
+      .then((res) => setFrameContext(res.frameContext))
+      .finally(() => setReady(true));
   }, []);
 
   if (!ready) {
     return (
       <div className="app-loading">
         <div className="timer-time">Loading...</div>
+      </div>
+    );
+  }
+
+  if (frameContext === "settings") {
+    return (
+      <div className="app app-config">
+        <div className="config-message">
+          <h2>Meeting Timer</h2>
+          <p>
+            Adds a countdown, stopwatch, and pomodoro timer to your meeting side
+            panel so everyone can see the time. Click <strong>Save</strong> to
+            add it.
+          </p>
+        </div>
       </div>
     );
   }

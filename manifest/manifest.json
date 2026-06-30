@@ -1,9 +1,15 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
-  "manifestVersion": "1.16",
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.19/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.19",
   "version": "1.0.0",
-  "id": "{{APP_ID}}",
-  "packageName": "com.example.meetingstimer",
+  "id": "d90a9f1c-5eef-451f-8a97-d65527fd80ba",
+  "packageName": "com.mitchelljfranklin.meetingtimer",
+  "developer": {
+    "name": "PLACEHOLDER — Your Company",
+    "websiteUrl": "https://www.example.com",
+    "privacyUrl": "https://www.example.com/privacy",
+    "termsOfUseUrl": "https://www.example.com/terms"
+  },
   "name": {
     "short": "Meeting Timer",
     "full": "Meeting Timer"
@@ -32,9 +38,5 @@
   "staticTabs": [],
   "bots": [],
   "composeExtensions": [],
-  "validDomains": ["{{BASE_URL_DOMAIN}}"],
-  "webApplicationInfo": {
-    "id": "{{APP_ID}}",
-    "resource": "api://{{BASE_URL_DOMAIN}}/{{APP_ID}}"
-  }
+  "validDomains": ["{{BASE_URL_DOMAIN}}"]
 }

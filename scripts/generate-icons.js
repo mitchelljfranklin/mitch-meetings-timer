@@ -6,6 +6,8 @@ import { deflateSync } from "zlib";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const manifestDir = join(__dirname, "..", "manifest");
 
+const ACCENT = [98, 100, 167];
+
 function crc32(data) {
   let crc = 0xffffffff;
   const table = new Int32Array(256);
@@ -30,7 +32,7 @@ function pngChunk(type, data) {
   return Buffer.concat([len, typeAndData, crcBuf]);
 }
 
-function generateSolidPng(size, filePath, r, g, b, a) {
+function writePng(size, filePath, pixel) {
   const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
   const ihdrData = Buffer.alloc(13);
@@ -38,20 +40,21 @@ function generateSolidPng(size, filePath, r, g, b, a) {
   ihdrData.writeUInt32BE(size, 4);
   ihdrData[8] = 8;
   ihdrData[9] = 6;
-  ihdrData[10] = 0;
-  ihdrData[11] = 0;
-  ihdrData[12] = 0;
 
   const rawRows = [];
   for (let y = 0; y < size; y++) {
     rawRows.push(Buffer.from([0]));
-    const pixel = Buffer.from([r, g, b, a]);
+    const row = Buffer.alloc(size * 4);
     for (let x = 0; x < size; x++) {
-      rawRows.push(pixel);
+      const [r, g, b, a] = pixel(x + 0.5, y + 0.5, size);
+      row[x * 4] = r;
+      row[x * 4 + 1] = g;
+      row[x * 4 + 2] = b;
+      row[x * 4 + 3] = a;
     }
+    rawRows.push(row);
   }
-  const rawData = Buffer.concat(rawRows);
-  const compressed = deflateSync(rawData, { level: 9 });
+  const compressed = deflateSync(Buffer.concat(rawRows), { level: 9 });
 
   const png = Buffer.concat([
     signature,
@@ -64,9 +67,59 @@ function generateSolidPng(size, filePath, r, g, b, a) {
   console.log(`Created ${filePath} (${size}x${size})`);
 }
 
+const clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);
+
+function distToSegment(px, py, ax, ay, bx, by) {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const len2 = dx * dx + dy * dy || 1;
+  let t = ((px - ax) * dx + (py - ay) * dy) / len2;
+  t = clamp01(t);
+  const cx = ax + t * dx;
+  const cy = ay + t * dy;
+  return Math.hypot(px - cx, py - cy);
+}
+
+function clockCoverage(x, y, size) {
+  const cx = size / 2;
+  const cy = size / 2;
+  const R = size * 0.4;
+  const t = Math.max(size * 0.075, 1.5);
+  const d = Math.hypot(x - cx, y - cy);
+
+  const ringEdge = Math.max(d - R, R - t - d);
+  let cov = clamp01(0.5 - ringEdge);
+
+  const minuteHand =
+    distToSegment(x, y, cx, cy, cx, cy - R * 0.72) - Math.max(size * 0.028, 1);
+  cov = Math.max(cov, clamp01(0.5 - minuteHand));
+
+  const hourHand =
+    distToSegment(x, y, cx, cy, cx + R * 0.46, cy) - Math.max(size * 0.034, 1);
+  cov = Math.max(cov, clamp01(0.5 - hourHand));
+
+  const pivot = d - size * 0.045;
+  cov = Math.max(cov, clamp01(0.5 - pivot));
+
+  return cov;
+}
+
+function colorPixel(x, y, size) {
+  const cov = clockCoverage(x, y, size);
+  const r = Math.round(ACCENT[0] + (255 - ACCENT[0]) * cov);
+  const g = Math.round(ACCENT[1] + (255 - ACCENT[1]) * cov);
+  const b = Math.round(ACCENT[2] + (255 - ACCENT[2]) * cov);
+  return [r, g, b, 255];
+}
+
+function outlinePixel(x, y, size) {
+  const cov = clockCoverage(x, y, size);
+  return [255, 255, 255, Math.round(cov * 255)];
+}
+
 mkdirSync(manifestDir, { recursive: true });
 
-generateSolidPng(192, join(manifestDir, "color.png"), 98, 100, 167, 255);
-generateSolidPng(32, join(manifestDir, "outline.png"), 98, 100, 167, 255);
+writePng(192, join(manifestDir, "color.png"), colorPixel);
+writePng(32, join(manifestDir, "outline.png"), outlinePixel);
 
 console.log("Icons generated successfully.");

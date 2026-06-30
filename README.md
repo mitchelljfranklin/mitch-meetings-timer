@@ -83,9 +83,9 @@ BASE_URL=https://abc123.devtunnels.ms npm run package
 
 This generates `meetings-timer.zip` in the project root.
 
-> You can also set `APP_ID` to a custom GUID if you have an existing
-> Microsoft Entra ID app registration. If not set, a placeholder is used which
-> works for sideloading.
+> The app's manifest `id` is a fixed GUID baked into `manifest/manifest.json`.
+> Keep it stable — it must be identical everywhere the app is installed. Only the
+> `BASE_URL` (and derived domain) is injected at package time.
 
 ### 5. Sideload to Teams
 
@@ -138,6 +138,23 @@ az webapp config set --name meetings-timer --startup-file "npm run serve"
 After deployment, update `BASE_URL` with your production URL, re-package the manifest,
 and upload the updated package.
 
+### Before publishing to a store
+
+Dev tunnels / ngrok are fine for **sideloaded testing only** — they're temporary and
+not suitable for org-wide or multi-org distribution. Before submitting to your org's
+(or another org's) Teams app store:
+
+- **Host on a stable HTTPS domain.** Other tenants load *your* hosted URL, so it must
+  stay reachable. Set `BASE_URL` to that domain before packaging.
+- **Fill in the `developer` block** in `manifest/manifest.json` — replace the
+  `PLACEHOLDER` name and the `websiteUrl`, `privacyUrl`, and `termsOfUseUrl`
+  (`https://www.example.com/...`) with real, reachable URLs. These are required for
+  store validation.
+- **Replace the placeholder icons** (`manifest/color.png`, `manifest/outline.png`)
+  with your own branded artwork. The outline icon must be transparent with a white glyph.
+- The app implements **no SSO**, so the manifest intentionally omits `webApplicationInfo`.
+  Add it back only if you register a (multi-tenant) Microsoft Entra ID app for SSO.
+
 ## Project structure
 
 ```
@@ -173,7 +190,7 @@ meetings-timer/
 
 ## App manifest
 
-The manifest (`manifest/manifest.json`) targets manifest version **1.16** and
+The manifest (`manifest/manifest.json`) targets manifest version **1.19** and
 declares the app as a **configurable tab** available in:
 
 - `meetingSidePanel` — in-meeting side panel (primary target)
