@@ -29,7 +29,7 @@
     "@fluentui/react-icons": "^2.0.331",
     "@microsoft/teams-js": "^2.31.0",
     "express": "^5.1.0",
-    "helmet": "^8.2.0",
+    "helmet": "^8.3.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
