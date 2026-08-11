@@ -27,7 +27,7 @@
   "dependencies": {
     "@fluentui/react-components": "^9.74.3",
     "@fluentui/react-icons": "^2.0.333",
-    "@microsoft/teams-js": "^2.53.1",
+    "@microsoft/teams-js": "^2.55.0",
     "express": "^5.2.1",
     "helmet": "^8.3.0",
     "react": "^19.2.7",
