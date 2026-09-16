@@ -1,3 +1,5 @@
+``I have decided to discontinue this project. As I am not a business vendor, I cannot host the extension on the app store, and Microsoft provides no alternative distribution method. It is a shame to stop, but since most similar tools are free products that require and for some reason need specific corporate permissions, I cannot provide a free alternative.``
+
 # Mitch Meeting-Timer — Microsoft Teams App
 
 A multi-mode timer app for Microsoft Teams meetings — **countdown**, **stopwatch**,
